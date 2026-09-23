@@ -371,10 +371,17 @@
 
       if (data.inning !== undefined) {
 
-        inning = Number(data.inning);
+  const savedInning = Number(data.inning);
 
-        document.getElementById("inning").textContent =
-          inning;
+  if (Number.isFinite(savedInning) && savedInning >= 1) {
+    inning = savedInning;
+  } else {
+    inning = 1;
+  }
+
+  document.getElementById("inning").textContent = inning;
+
+}
 
       }
 
