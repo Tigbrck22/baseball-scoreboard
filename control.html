@@ -1,46 +1,13 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Baseball Scoreboard Control</title>
-
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #eeeeee;
-  padding: 15px;
-}
-
-h2 {
-  text-align: center;
-}
-
-input, select, button {
-  font-size: 20px;
-  padding: 10px;
-  margin: 5px;
-}
-
-button {
-  min-width: 100px;
-}
-
-.section {
-  background: white;
-  padding: 12px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-}
-
-.status {
-  background: #222;
-  color: white;
-  padding: 12px;
-  margin-top: 15px;
-  border-radius: 8px;
-  text-align: center;
-  word-wrap: break-word;
-}
+body { font-family: Arial; background:#eee; padding:15px; }
+.section { background:white; padding:15px; margin-bottom:12px; border-radius:8px; }
+button, input, select { font-size:20px; padding:10px; margin:5px; }
+.status { background:#222; color:white; padding:12px; margin-top:15px; }
 </style>
 </head>
 
@@ -49,88 +16,64 @@ button {
 <h2>Baseball Scoreboard Control</h2>
 
 <div class="section">
-  <input id="awayTeam" placeholder="Away Team">
-  <input id="homeTeam" placeholder="Home Team">
+<input id="awayTeam" placeholder="Away Team">
+<input id="homeTeam" placeholder="Home Team">
 </div>
 
 <div class="section">
-  <h3>Away Score: <span id="awayScore">0</span></h3>
-  <button onclick="changeScore('away',1)">Away +1</button>
-  <button onclick="changeScore('away',-1)">Away -1</button>
+<b>Away Score: <span id="awayScore">0</span></b><br>
+<button id="awayPlus">Away +1</button>
+<button id="awayMinus">Away -1</button>
 </div>
 
 <div class="section">
-  <h3>Home Score: <span id="homeScore">0</span></h3>
-  <button onclick="changeScore('home',1)">Home +1</button>
-  <button onclick="changeScore('home',-1)">Home -1</button>
+<b>Home Score: <span id="homeScore">0</span></b><br>
+<button id="homePlus">Home +1</button>
+<button id="homeMinus">Home -1</button>
 </div>
 
 <div class="section">
-  <h3>Inning</h3>
-  <select id="half">
-    <option value="TOP">TOP</option>
-    <option value="BOTTOM">BOTTOM</option>
-  </select>
-
-  <input id="inning" type="number" value="1" min="1">
+<select id="half">
+<option>TOP</option>
+<option>BOTTOM</option>
+</select>
+<input id="inning" type="number" value="1" min="1">
 </div>
 
 <div class="section">
-  <h3>Outs: <span id="outs">0</span></h3>
-  <button onclick="changeScore('outs',1)">Out +1</button>
-  <button onclick="changeScore('outs',-1)">Out -1</button>
-  <button onclick="resetOuts()">Reset Outs</button>
+<b>Outs: <span id="outs">0</span></b><br>
+<button id="outPlus">Out +1</button>
+<button id="outMinus">Out -1</button>
 </div>
 
 <div class="section">
-  <h3>Count</h3>
-
-  Balls: <span id="balls">0</span><br>
-  <button onclick="changeScore('balls',1)">Ball +1</button>
-  <button onclick="changeScore('balls',-1)">Ball -1</button>
-
-  <br><br>
-
-  Strikes: <span id="strikes">0</span><br>
-  <button onclick="changeScore('strikes',1)">Strike +1</button>
-  <button onclick="changeScore('strikes',-1)">Strike -1</button>
-
-  <br><br>
-
-  <button onclick="resetCount()">Reset Count</button>
+<b>Balls: <span id="balls">0</span></b><br>
+<button id="ballPlus">Ball +1</button>
+<button id="ballMinus">Ball -1</button>
+<br>
+<b>Strikes: <span id="strikes">0</span></b><br>
+<button id="strikePlus">Strike +1</button>
+<button id="strikeMinus">Strike -1</button>
 </div>
 
 <div class="section">
-  <button onclick="save()" style="width:100%;font-weight:bold;">
-    UPDATE SCOREBOARD
-  </button>
+<button id="update" style="width:100%;font-weight:bold;">
+UPDATE SCOREBOARD
+</button>
 </div>
 
-<div id="status" class="status">
-  Starting Firebase...
-</div>
+<div id="status" class="status">Starting...</div>
 
 <script type="module">
 
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import {
-  getDatabase,
-  ref,
-  set
-}
+import { getDatabase, ref, set }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
-/*
-  IMPORTANT:
-  KEEP YOUR EXISTING FIREBASE CONFIG HERE.
-  Replace ONLY the example values below with the
-  Firebase config you already used before.
-*/
-
-const firebaseConfig ={
+};const firebaseConfig ={
 
   apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
 
@@ -148,114 +91,74 @@ const firebaseConfig ={
 
   measurementId:"G-FY4J06H31X"
 
-
 };
+  
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-const statusBox = document.getElementById("status");
+const status = document.getElementById("status");
 
-let db;
+status.textContent = "Firebase connected. Ready to update.";
 
-try {
 
-  const app = initializeApp(firebaseConfig);
-
-  db = getDatabase(app);
-
-  statusBox.textContent = "Firebase connected. Ready to update.";
-
-} catch (error) {
-
-  statusBox.textContent =
-    "Firebase setup error: " + error.message;
-
+function change(id, amount) {
+  const el = document.getElementById(id);
+  let value = Number(el.textContent) + amount;
+  if (value < 0) value = 0;
+  el.textContent = value;
 }
 
 
-window.changeScore = function(type, amount) {
+document.getElementById("awayPlus").onclick = () => change("awayScore", 1);
+document.getElementById("awayMinus").onclick = () => change("awayScore", -1);
 
-  const element = document.getElementById(type);
+document.getElementById("homePlus").onclick = () => change("homeScore", 1);
+document.getElementById("homeMinus").onclick = () => change("homeScore", -1);
 
-  let value = Number(element.textContent);
+document.getElementById("outPlus").onclick = () => change("outs", 1);
+document.getElementById("outMinus").onclick = () => change("outs", -1);
 
-  value += amount;
+document.getElementById("ballPlus").onclick = () => change("balls", 1);
+document.getElementById("ballMinus").onclick = () => change("balls", -1);
 
-  if (value < 0) value = 0;
-
-  element.textContent = value;
-
-};
-
-
-window.resetCount = function() {
-
-  document.getElementById("balls").textContent = 0;
-  document.getElementById("strikes").textContent = 0;
-
-};
+document.getElementById("strikePlus").onclick = () => change("strikes", 1);
+document.getElementById("strikeMinus").onclick = () => change("strikes", -1);
 
 
-window.resetOuts = function() {
+document.getElementById("update").onclick = async () => {
 
-  document.getElementById("outs").textContent = 0;
-
-};
-
-
-window.save = async function() {
-
-  if (!db) {
-
-    statusBox.textContent =
-      "ERROR: Firebase is not connected.";
-
-    return;
-
-  }
-
-  statusBox.textContent = "Saving scoreboard...";
-
-  const data = {
-
-    awayTeam:
-      document.getElementById("awayTeam").value || "AWAY",
-
-    homeTeam:
-      document.getElementById("homeTeam").value || "HOME",
-
-    awayScore:
-      Number(document.getElementById("awayScore").textContent),
-
-    homeScore:
-      Number(document.getElementById("homeScore").textContent),
-
-    inning:
-      document.getElementById("half").value +
-      " " +
-      document.getElementById("inning").value +
-      "ST",
-
-    outs:
-      Number(document.getElementById("outs").textContent),
-
-    balls:
-      Number(document.getElementById("balls").textContent),
-
-    strikes:
-      Number(document.getElementById("strikes").textContent)
-
-  };
+  status.textContent = "Saving...";
 
   try {
 
-    await set(ref(db, "scoreboard"), data);
+    await set(ref(db, "scoreboard"), {
 
-    statusBox.textContent =
-      "SUCCESS! Scoreboard updated.";
+      awayTeam: document.getElementById("awayTeam").value || "AWAY",
+
+      homeTeam: document.getElementById("homeTeam").value || "HOME",
+
+      awayScore: Number(document.getElementById("awayScore").textContent),
+
+      homeScore: Number(document.getElementById("homeScore").textContent),
+
+      inning:
+        document.getElementById("half").value +
+        " " +
+        document.getElementById("inning").value,
+
+      outs: Number(document.getElementById("outs").textContent),
+
+      balls: Number(document.getElementById("balls").textContent),
+
+      strikes: Number(document.getElementById("strikes").textContent)
+
+    });
+
+    status.textContent = "SUCCESS! Scoreboard updated.";
 
   } catch (error) {
 
-    statusBox.textContent =
-      "FIREBASE ERROR: " + error.message;
+    status.textContent = "ERROR: " + error.message;
 
   }
 
