@@ -1,1 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baseball Scoreboard Control</title>
 
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 15px;
+  max-width: 500px;
+  margin: auto;
+}
+
+input, button, select {
+  font-size: 20px;
+  padding: 10px;
+  margin: 5px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  font-weight: bold;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row button {
+  width: 50%;
+}
+
+h2 {
+  margin-bottom: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Baseball Scoreboard Control</h2>
+
+<input id="awayTeam" placeholder="Away Team">
+<input id="homeTeam" placeholder="Home Team">
+
+<h3>Score</h3>
+
+<div class="row">
+  <button onclick="changeScore('awayScore',1)">Away +1</button>
+  <button onclick="changeScore('awayScore',-1)">Away -1</button>
+</div>
+
+<div class="row">
+  <button onclick="changeScore('homeScore',1)">Home +1</button>
+  <button onclick="changeScore('homeScore',-1)">Home -1</button>
+</div>
+
+<h3>Inning</h3>
+
+<select id="half">
+  <option value="TOP">TOP</option>
+  <option value="BOTTOM">BOTTOM</option>
+</select>
+
+<input id="inning" type="number" value="1" min="1">
+
+<h3>Outs</h3>
+
+<div class="row">
+  <button onclick="changeScore('outs',1)">Out +1</button>
+  <button onclick="changeScore('outs',-1)">Out -1</button>
+</div>
+
+<h3>Count</h3>
+
+<div class="row">
+  <button onclick="changeScore('balls',1)">Ball +1</button>
+  <button onclick="changeScore('balls',-1)">Ball -1</button>
+</div>
+
+<div class="row">
+  <button onclick="changeScore('strikes',1)">Strike +1</button>
+  <button onclick="changeScore('strikes',-1)">Strike -1</button>
+</div>
+
+<br>
+
+<button onclick="resetCount()">Reset Count</button>
+<button onclick="resetOuts()">Reset Outs</button>
+<button onclick="save()">UPDATE SCOREBOARD</button>
+
+<script type="module">
+
+const firebaseConfig ={
+
+  apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
+
+  authDomain:"baseball-scoreboard-fd6ad.firebaseapp.com",
+
+  databaseURL:"https://baseball-scoreboard-fd6ad-default-rtdb.firebaseio.com",
+
+  projectId:"baseball-scoreboard-fd6ad",
+
+  storageBucket:"baseball-scoreboard-fd6ad.firebasestorage.app",
+
+  messagingSenderId:"208584160937",
+
+  appId:"1:208584160937:web:ebd8a20fce17f2fed1dbb8",
+
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import { getDatabase, ref, set } from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let score = {
+  awayScore: 0,
+  homeScore: 0,
+  outs: 0,
+  balls: 0,
+  strikes: 0
+};
+
+window.changeScore = function(field, amount) {
+
+  score[field] = Math.max(0, score[field] + amount);
+
+  if (field === "outs")
+    score.outs = Math.min(3, score.outs);
+
+  if (field === "balls")
+    score.balls = Math.min(4, score.balls);
+
+  if (field === "strikes")
+    score.strikes = Math.min(3, score.strikes);
+
+};
+
+window.resetCount = function() {
+  score.balls = 0;
+  score.strikes = 0;
+};
+
+window.resetOuts = function() {
+  score.outs = 0;
+};
+
+window.save = async function() {
+
+  const half = document.getElementById("half").value;
+  const inningNumber = document.getElementById("inning").value;
+
+  await set(ref(db, "scoreboard"), {
+
+    awayTeam: document.getElementById("awayTeam").value,
+    homeTeam: document.getElementById("homeTeam").value,
+
+    awayScore: score.awayScore,
+    homeScore: score.homeScore,
+
+    inning: half + " " + inningNumber + "TH",
+
+    outs: score.outs,
+    balls: score.balls,
+    strikes: score.strikes
+
+  });
+
+  alert("Scoreboard updated!");
+
+};
+
+</script>
+
+</body>
+</html>
