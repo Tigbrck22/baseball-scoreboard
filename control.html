@@ -307,6 +307,51 @@
 
     onValue(scoreboardRef, (snapshot) => {
 
+  const data = snapshot.val();
+
+  if (!data) {
+    document.getElementById("status").textContent =
+      "Firebase connected. No scoreboard data yet.";
+    return;
+  }
+
+  if (data.awayTeam !== undefined) {
+    document.getElementById("awayTeam").value =
+      data.awayTeam;
+  }
+
+  if (data.homeTeam !== undefined) {
+    document.getElementById("homeTeam").value =
+      data.homeTeam;
+  }
+
+  const newAwayScore = Number(data.awayScore);
+  if (Number.isFinite(newAwayScore)) {
+    awayScore = newAwayScore;
+  }
+
+  const newHomeScore = Number(data.homeScore);
+  if (Number.isFinite(newHomeScore)) {
+    homeScore = newHomeScore;
+  }
+
+  const newInning = parseInt(data.inning, 10);
+
+  if (Number.isFinite(newInning) && newInning >= 1) {
+    inning = newInning;
+  } else {
+    inning = 1;
+  }
+
+  document.getElementById("awayScore").textContent = awayScore;
+  document.getElementById("homeScore").textContent = homeScore;
+  document.getElementById("inning").textContent = inning;
+
+  document.getElementById("status").textContent =
+    "Firebase connected. Ready to update.";
+
+});
+
       const data = snapshot.val();
 
       if (!data) {
