@@ -237,6 +237,8 @@
   // Make sure inning always starts as a real number
   if (!Number.isFinite(Number(inning)) || Number(inning) < 1) {
     inning = 1;
+    inning = 1;
+document.getElementById("inning").textContent = "1";
   } else {
     inning = Number(inning);
   }
