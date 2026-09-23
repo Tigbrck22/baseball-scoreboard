@@ -1,79 +1,177 @@
-    <!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Baseball Scoreboard Control</title>
-<style>
-body { font-family: Arial; background:#eee; padding:15px; }
-.section { background:white; padding:15px; margin-bottom:12px; border-radius:8px; }
-button, input, select { font-size:20px; padding:10px; margin:5px; }
-.status { background:#222; color:white; padding:12px; margin-top:15px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baseball Scoreboard Control</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #status {
+      margin: 10px auto 20px;
+      padding: 10px;
+      background: #333;
+      border-radius: 8px;
+      max-width: 500px;
+    }
+
+    .team {
+      margin: 20px auto;
+      max-width: 500px;
+      padding: 20px;
+      background: #222;
+      border-radius: 12px;
+    }
+
+    input {
+      width: 90%;
+      max-width: 400px;
+      padding: 12px;
+      margin: 6px;
+      font-size: 18px;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+    }
+
+    .score {
+      font-size: 60px;
+      font-weight: bold;
+      margin: 10px;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 14px 22px;
+      margin: 6px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.96);
+    }
+
+    .add {
+      background: #2196f3;
+      color: white;
+    }
+
+    .subtract {
+      background: #555;
+      color: white;
+    }
+
+    #update {
+      background: #28a745;
+      color: white;
+      font-size: 22px;
+      padding: 16px 30px;
+      margin-top: 20px;
+    }
+
+    .inning-controls {
+      margin: 20px auto;
+      max-width: 500px;
+      padding: 20px;
+      background: #222;
+      border-radius: 12px;
+    }
+  </style>
 </head>
 
 <body>
 
-<h2>Baseball Scoreboard Control</h2>
+  <h1>Baseball Scoreboard Control</h1>
 
-<div class="section">
-<input id="awayTeam" placeholder="Away Team">
-<input id="homeTeam" placeholder="Home Team">
-</div>
+  <div id="status">Connecting to Firebase...</div>
 
-<div class="section">
-<b>Away Score: <span id="awayScore">0</span></b><br>
-<button id="awayPlus">Away +1</button>
-<button id="awayMinus">Away -1</button>
-</div>
+  <div class="team">
+    <h2>Away Team</h2>
 
-<div class="section">
-<b>Home Score: <span id="homeScore">0</span></b><br>
-<button id="homePlus">Home +1</button>
-<button id="homeMinus">Home -1</button>
-</div>
+    <input id="awayTeam" type="text" value="Mountain View Prep">
 
-<div class="section">
-<select id="half">
-<option>TOP</option>
-<option>BOTTOM</option>
-</select>
-<input id="inning" type="number" value="1" min="1">
-</div>
+    <div id="awayScore" class="score">0</div>
 
-<div class="section">
-<b>Outs: <span id="outs">0</span></b><br>
-<button id="outPlus">Out +1</button>
-<button id="outMinus">Out -1</button>
-</div>
+    <button class="add" onclick="changeScore('away', 1)">
+      Away +1
+    </button>
 
-<div class="section">
-<b>Balls: <span id="balls">0</span></b><br>
-<button id="ballPlus">Ball +1</button>
-<button id="ballMinus">Ball -1</button>
-<br>
-<b>Strikes: <span id="strikes">0</span></b><br>
-<button id="strikePlus">Strike +1</button>
-<button id="strikeMinus">Strike -1</button>
-</div>
+    <button class="subtract" onclick="changeScore('away', -1)">
+      Away -1
+    </button>
+  </div>
 
-<div class="section">
-<button id="update" style="width:100%;font-weight:bold;">
-UPDATE SCOREBOARD
-</button>
-</div>
+  <div class="team">
+    <h2>Home Team</h2>
 
-<div id="status" class="status">Starting...</div>
+    <input id="homeTeam" type="text" value="Opponent">
 
-<script type="module">
+    <div id="homeScore" class="score">0</div>
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    <button class="add" onclick="changeScore('home', 1)">
+      Home +1
+    </button>
 
-import { getDatabase, ref, set }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    <button class="subtract" onclick="changeScore('home', -1)">
+      Home -1
+    </button>
+  </div>
+
+  <div class="inning-controls">
+
+    <h2>Inning</h2>
+
+    <div id="inning" class="score">1</div>
+
+    <button class="add" onclick="changeInning(1)">
+      Inning +1
+    </button>
+
+    <button class="subtract" onclick="changeInning(-1)">
+      Inning -1
+    </button>
+
+  </div>
+
+  <button id="update" onclick="updateScoreboard()">
+    UPDATE SCOREBOARD
+  </button>
 
 
-};const firebaseConfig ={
+  <!-- Firebase -->
+  <script type="module">
+
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+      getDatabase,
+      ref,
+      set,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+    /*
+      YOUR FIREBASE CONFIG
+    */
+
+    
+  const firebaseConfig ={
 
   apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
 
@@ -91,80 +189,191 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   measurementId:"G-FY4J06H31X"
 
-};
-  
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
-const status = document.getElementById("status");
-
-status.textContent = "Firebase connected. Ready to update.";
+  };
 
 
-function change(id, amount) {
-  const el = document.getElementById(id);
-  let value = Number(el.textContent) + amount;
-  if (value < 0) value = 0;
-  el.textContent = value;
-}
+    const app = initializeApp(firebaseConfig);
+
+    const db = getDatabase(app);
+
+    const scoreboardRef = ref(db, "scoreboard");
 
 
-document.getElementById("awayPlus").onclick = () => change("awayScore", 1);
-document.getElementById("awayMinus").onclick = () => change("awayScore", -1);
-
-document.getElementById("homePlus").onclick = () => change("homeScore", 1);
-document.getElementById("homeMinus").onclick = () => change("homeScore", -1);
-
-document.getElementById("outPlus").onclick = () => change("outs", 1);
-document.getElementById("outMinus").onclick = () => change("outs", -1);
-
-document.getElementById("ballPlus").onclick = () => change("balls", 1);
-document.getElementById("ballMinus").onclick = () => change("balls", -1);
-
-document.getElementById("strikePlus").onclick = () => change("strikes", 1);
-document.getElementById("strikeMinus").onclick = () => change("strikes", -1);
+    let awayScore = 0;
+    let homeScore = 0;
+    let inning = 1;
 
 
-document.getElementById("update").onclick = async () => {
+    /*
+      CHANGE SCORE
+    */
 
-  status.textContent = "Saving...";
+    window.changeScore = function(team, amount) {
 
-  try {
+      if (team === "away") {
 
-    await set(ref(db, "scoreboard"), {
+        awayScore += amount;
 
-      awayTeam: document.getElementById("awayTeam").value || "AWAY",
+        if (awayScore < 0) {
+          awayScore = 0;
+        }
 
-      homeTeam: document.getElementById("homeTeam").value || "HOME",
+        document.getElementById("awayScore").textContent = awayScore;
 
-      awayScore: Number(document.getElementById("awayScore").textContent),
+      }
 
-      homeScore: Number(document.getElementById("homeScore").textContent),
+      if (team === "home") {
 
-      inning:
-        document.getElementById("half").value +
-        " " +
-        document.getElementById("inning").value,
+        homeScore += amount;
 
-      outs: Number(document.getElementById("outs").textContent),
+        if (homeScore < 0) {
+          homeScore = 0;
+        }
 
-      balls: Number(document.getElementById("balls").textContent),
+        document.getElementById("homeScore").textContent = homeScore;
 
-      strikes: Number(document.getElementById("strikes").textContent)
+      }
+
+    };
+
+
+    /*
+      CHANGE INNING
+    */
+
+    window.changeInning = function(amount) {
+
+      inning += amount;
+
+      if (inning < 1) {
+        inning = 1;
+      }
+
+      document.getElementById("inning").textContent = inning;
+
+    };
+
+
+    /*
+      SEND SCOREBOARD TO FIREBASE
+    */
+
+    window.updateScoreboard = async function() {
+
+      const awayTeam =
+        document.getElementById("awayTeam").value;
+
+      const homeTeam =
+        document.getElementById("homeTeam").value;
+
+
+      const scoreboardData = {
+
+        awayTeam: awayTeam,
+
+        homeTeam: homeTeam,
+
+        awayScore: awayScore,
+
+        homeScore: homeScore,
+
+        inning: inning,
+
+        updatedAt: Date.now()
+
+      };
+
+
+      try {
+
+        await set(scoreboardRef, scoreboardData);
+
+        document.getElementById("status").textContent =
+          "Scoreboard updated successfully!";
+
+      } catch (error) {
+
+        console.error(error);
+
+        document.getElementById("status").textContent =
+          "ERROR: " + error.message;
+
+      }
+
+    };
+
+
+    /*
+      LISTEN FOR FIREBASE CHANGES
+    */
+
+    onValue(scoreboardRef, (snapshot) => {
+
+      const data = snapshot.val();
+
+      if (!data) {
+
+        document.getElementById("status").textContent =
+          "Firebase connected. No scoreboard data yet.";
+
+        return;
+
+      }
+
+
+      /*
+        Only load Firebase values when they exist.
+      */
+
+      if (data.awayTeam !== undefined) {
+        document.getElementById("awayTeam").value =
+          data.awayTeam;
+      }
+
+      if (data.homeTeam !== undefined) {
+        document.getElementById("homeTeam").value =
+          data.homeTeam;
+      }
+
+
+      if (data.awayScore !== undefined) {
+
+        awayScore = Number(data.awayScore);
+
+        document.getElementById("awayScore").textContent =
+          awayScore;
+
+      }
+
+
+      if (data.homeScore !== undefined) {
+
+        homeScore = Number(data.homeScore);
+
+        document.getElementById("homeScore").textContent =
+          homeScore;
+
+      }
+
+
+      if (data.inning !== undefined) {
+
+        inning = Number(data.inning);
+
+        document.getElementById("inning").textContent =
+          inning;
+
+      }
+
+
+      document.getElementById("status").textContent =
+        "Firebase connected. Ready to update.";
 
     });
 
-    status.textContent = "SUCCESS! Scoreboard updated.";
 
-  } catch (error) {
-
-    status.textContent = "ERROR: " + error.message;
-
-  }
-
-};
-
-</script>
+  </script>
 
 </body>
 </html>
