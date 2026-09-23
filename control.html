@@ -167,13 +167,12 @@
 
 
     /*
-      
+      YOUR FIREBASE CONFIG
     */
 
-    
-  const firebaseConfig ={
-
-  apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
+    const firebaseConfig = {
+      
+      apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
 
   authDomain:"baseball-scoreboard-fd6ad.firebaseapp.com",
 
@@ -188,9 +187,7 @@
   appId:"1:208584160937:web:ebd8a20fce17f2fed1dbb8",
 
   measurementId:"G-FY4J06H31X"
-
-
-  };
+    };
 
 
     const app = initializeApp(firebaseConfig);
@@ -246,21 +243,9 @@
 
       inning += amount;
 
-      if (data.inning !== undefined) {
-
-  const savedInning = Number(data.inning);
-
-  if (Number.isFinite(savedInning) && savedInning >= 1) {
-    inning = savedInning;
-  } else {
-    inning = 1;
-  }
-
-  document.getElementById("inning").textContent = inning;
-
-}
-        
-      
+      if (inning < 1) {
+        inning = 1;
+      }
 
       document.getElementById("inning").textContent = inning;
 
@@ -371,17 +356,10 @@
 
       if (data.inning !== undefined) {
 
-  const savedInning = Number(data.inning);
+        inning = Number(data.inning);
 
-  if (Number.isFinite(savedInning) && savedInning >= 1) {
-    inning = savedInning;
-  } else {
-    inning = 1;
-  }
-
-  document.getElementById("inning").textContent = inning;
-
-}
+        document.getElementById("inning").textContent =
+          inning;
 
       }
 
