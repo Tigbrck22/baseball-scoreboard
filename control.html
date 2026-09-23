@@ -167,7 +167,7 @@
 
 
     /*
-      YOUR FIREBASE CONFIG
+      
     */
 
     
@@ -246,9 +246,21 @@
 
       inning += amount;
 
-      if (inning < 1) {
-        inning = 1;
-      }
+      if (data.inning !== undefined) {
+
+  const savedInning = Number(data.inning);
+
+  if (Number.isFinite(savedInning) && savedInning >= 1) {
+    inning = savedInning;
+  } else {
+    inning = 1;
+  }
+
+  document.getElementById("inning").textContent = inning;
+
+}
+        
+      
 
       document.getElementById("inning").textContent = inning;
 
