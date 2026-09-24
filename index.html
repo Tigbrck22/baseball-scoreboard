@@ -28,26 +28,27 @@ body {
   font-size: 32px;
 }
 
+/* Larger inning and outs */
 .info {
   text-align: center;
   border-top: 1px solid white;
   margin-top: 8px;
-  padding-top: 8px;
-  font-size: 18px;
+  padding-top: 10px;
+  font-size: 30px;
+  font-weight: bold;
 }
-</style></head><body><div class="scoreboard">
-  <div class="team">
+
+</style></head><body><div class="scoreboard">  <div class="team">
     <span id="awayTeam">MOUNTAIN VIEW PREP</span>
     <span class="score" id="awayScore">0</span>
   </div>  <div class="team">
     <span id="homeTeam">OPPONENT</span>
     <span class="score" id="homeScore">0</span>
   </div>  <div class="info">
-    <span id="inning">TOP 1ST</span> • <span id="outs">0 OUT</span>
-  </div>  <div class="info">
-    COUNT <span id="balls">0</span>-<span id="strikes">0</span>
-  </div>
-</div><script type="module">
+    <span id="inning">TOP 1ST</span>
+    •
+    <span id="outs">0 OUT</span>
+  </div></div><script type="module">
 
 import { initializeApp } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -93,12 +94,6 @@ onValue(scoreboardRef, (snapshot) => {
 
   document.getElementById("outs").textContent =
     (data.outs ?? 0) + " OUT";
-
-  document.getElementById("balls").textContent =
-    data.balls ?? 0;
-
-  document.getElementById("strikes").textContent =
-    data.strikes ?? 0;
 
 });
 
