@@ -1,10 +1,7 @@
-  <!DOCTYPE html>
-<html>
+<!DOCTYPE html><html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Baseball Scoreboard</title>
-
-<style>
+<title>Baseball Scoreboard</title><style>
 body {
   margin: 0;
   background: transparent;
@@ -38,54 +35,35 @@ body {
   padding-top: 8px;
   font-size: 18px;
 }
-</style>
-</head>
-
-<body>
-
-<div class="scoreboard">
+</style></head><body><div class="scoreboard">
   <div class="team">
     <span id="awayTeam">MOUNTAIN VIEW PREP</span>
     <span class="score" id="awayScore">0</span>
-  </div>
-
-  <div class="team">
+  </div>  <div class="team">
     <span id="homeTeam">OPPONENT</span>
     <span class="score" id="homeScore">0</span>
-  </div>
-
-  <div class="info">
+  </div>  <div class="info">
     <span id="inning">TOP 1ST</span> • <span id="outs">0 OUT</span>
-  </div>
-
-  <div class="info">
+  </div>  <div class="info">
     COUNT <span id="balls">0</span>-<span id="strikes">0</span>
   </div>
-</div>
-
-<script type="module">
-
-const firebaseConfig ={
-
-  apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
-
-  authDomain:"baseball-scoreboard-fd6ad.firebaseapp.com",
-
-  databaseURL:"https://baseball-scoreboard-fd6ad-default-rtdb.firebaseio.com",
-
-  projectId:"baseball-scoreboard-fd6ad",
-
-  storageBucket:"baseball-scoreboard-fd6ad.firebasestorage.app",
-
-  messagingSenderId:"208584160937",
-
-  appId:"1:208584160937:web:ebd8a20fce17f2fed1dbb8",
+</div><script type="module">
 
 import { initializeApp } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import { getDatabase, ref, onValue } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
+  authDomain: "baseball-scoreboard-fd6ad.firebaseapp.com",
+  databaseURL: "https://baseball-scoreboard-fd6ad-default-rtdb.firebaseio.com",
+  projectId: "baseball-scoreboard-fd6ad",
+  storageBucket: "baseball-scoreboard-fd6ad.firebasestorage.app",
+  messagingSenderId: "208584160937",
+  appId: "1:208584160937:web:ebd8a20fce17f2fed1dbb8"
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -124,7 +102,5 @@ onValue(scoreboardRef, (snapshot) => {
 
 });
 
-</script>
-
-</body>
+</script></body>
 </html>
