@@ -267,12 +267,7 @@ document.getElementById("inning").textContent = "1";
   document.getElementById("inning").textContent = inning;
 };
 
-if (data.outs !== undefined) {
 
-  outs = Number(data.outs);
-
-  document.getElementById("outs").textContent =
-    outs;
 
 }
  /*
@@ -386,7 +381,15 @@ window.changeOuts = function(amount) {
           awayScore;
 
       }
+      
+if (data.outs !== undefined) {
 
+  outs = Number(data.outs);
+
+  document.getElementById("outs").textContent =
+    outs;
+
+}
 
       if (data.homeScore !== undefined) {
 
