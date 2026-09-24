@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Baseball Scoreboard Control</title>
-
-  <style>
+  <title>Baseball Scoreboard Control</title>  <style>
     body {
       font-family: Arial, sans-serif;
       background: #111;
@@ -75,6 +72,17 @@
       color: white;
     }
 
+    .half {
+      background: #9c27b0;
+      color: white;
+      font-size: 24px;
+      padding: 16px 30px;
+    }
+
+    .half.active {
+      background: #28a745;
+    }
+
     #update {
       background: #28a745;
       color: white;
@@ -90,84 +98,73 @@
       background: #222;
       border-radius: 12px;
     }
-  </style>
-</head>
+  </style></head><body>  <h1>Baseball Scoreboard Control</h1>  <div id="status">Connecting to Firebase...</div>  <div class="team">
+    <h2>Away Team</h2><input id="awayTeam" type="text" value="Mountain View Prep">
 
-<body>
+<div id="awayScore" class="score">0</div>
 
-  <h1>Baseball Scoreboard Control</h1>
+<button class="add" onclick="changeScore('away', 1)">
+  Away +1
+</button>
 
-  <div id="status">Connecting to Firebase...</div>
+<button class="subtract" onclick="changeScore('away', -1)">
+  Away -1
+</button>
 
-  <div class="team">
-    <h2>Away Team</h2>
+  </div>  <div class="team">
+    <h2>Home Team</h2><input id="homeTeam" type="text" value="Opponent">
 
-    <input id="awayTeam" type="text" value="Mountain View Prep">
+<div id="homeScore" class="score">0</div>
 
-    <div id="awayScore" class="score">0</div>
+<button class="add" onclick="changeScore('home', 1)">
+  Home +1
+</button>
 
-    <button class="add" onclick="changeScore('away', 1)">
-      Away +1
-    </button>
+<button class="subtract" onclick="changeScore('home', -1)">
+  Home -1
+</button>
 
-    <button class="subtract" onclick="changeScore('away', -1)">
-      Away -1
-    </button>
-  </div>
+  </div>  <div class="inning-controls"><h2>Outs</h2>
 
-  <div class="team">
-    <h2>Home Team</h2>
+<div id="outs" class="score">0</div>
 
-    <input id="homeTeam" type="text" value="Opponent">
+<button class="add" onclick="changeOuts(1)">
+  Out +1
+</button>
 
-    <div id="homeScore" class="score">0</div>
+<button class="subtract" onclick="changeOuts(-1)">
+  Out -1
+</button>
 
-    <button class="add" onclick="changeScore('home', 1)">
-      Home +1
-    </button>
+  </div>  <div class="inning-controls"><h2>Inning</h2>
 
-    <button class="subtract" onclick="changeScore('home', -1)">
-      Home -1
-    </button>
-  </div>
-  <div class="inning-controls">
+<div id="inning" class="score">1</div>
 
-    <h2>Outs</h2>
+<button class="add" onclick="changeInning(1)">
+  Inning +1
+</button>
 
-    <div id="outs" class="score">0</div>
+<button class="subtract" onclick="changeInning(-1)">
+  Inning -1
+</button>
 
-    <button class="add" onclick="changeOuts(1)">
-      Out +1
-    </button>
+<h2>Half</h2>
 
-    <button class="subtract" onclick="changeOuts(-1)">
-      Out -1
-    </button>
+<button id="topButton" class="half active" onclick="setHalf('TOP')">
+  TOP
+</button>
 
-  </div>
-  <div class="inning-controls">
+<button id="bottomButton" class="half" onclick="setHalf('BOTTOM')">
+  BOTTOM
+</button>
 
-    <h2>Inning</h2>
+<div id="halfDisplay" style="font-size:28px; margin-top:10px;">
+  TOP
+</div>
 
-    <div id="inning" class="score">1</div>
-
-    <button class="add" onclick="changeInning(1)">
-      Inning +1
-    </button>
-
-    <button class="subtract" onclick="changeInning(-1)">
-      Inning -1
-    </button>
-
-  </div>
-
-  <button id="update" onclick="updateScoreboard()">
+  </div>  <button id="update" onclick="updateScoreboard()">
     UPDATE SCOREBOARD
-  </button>
-
-
-  <!-- Firebase -->
-  <script type="module">
+  </button>  <script type="module">
 
     import { initializeApp }
       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -180,44 +177,33 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
-    /*
-      YOUR FIREBASE CONFIG
-    */
-
     const firebaseConfig = {
-     apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
-  authDomain:"baseball-scoreboard-fd6ad.firebaseapp.com",
-  databaseURL:"https://baseball-scoreboard-fd6ad-default-rtdb.firebaseio.com",
-  projectId:"baseball-scoreboard-fd6ad",
-  storageBucket:"baseball-scoreboard-fd6ad.firebasestorage.app",
-  messagingSenderId:"208584160937",
-  appId:"1:208584160937:web:ebd8a20fce17f2fed1dbb8",
-  measurementId:"G-FY4J06H31X"
-
+      apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
+      authDomain:"baseball-scoreboard-fd6ad.firebaseapp.com",
+      databaseURL:"https://baseball-scoreboard-fd6ad-default-rtdb.firebaseio.com",
+      projectId:"baseball-scoreboard-fd6ad",
+      storageBucket:"baseball-scoreboard-fd6ad.firebasestorage.app",
+      messagingSenderId:"208584160937",
+      appId:"1:208584160937:web:ebd8a20fce17f2fed1dbb8",
+      measurementId:"G-FY4J06H31X"
     };
 
 
     const app = initializeApp(firebaseConfig);
-
     const db = getDatabase(app);
-
     const scoreboardRef = ref(db, "scoreboard");
 
 
-let awayScore = 0;
-let homeScore = 0;
-let inning = 1;
-let outs = 0;    
+    let awayScore = 0;
+    let homeScore = 0;
+    let inning = 1;
+    let outs = 0;
+    let inningHalf = "TOP";
 
-
-    /*
-      CHANGE SCORE
-    */
 
     window.changeScore = function(team, amount) {
 
       if (team === "away") {
-
         awayScore += amount;
 
         if (awayScore < 0) {
@@ -225,11 +211,9 @@ let outs = 0;
         }
 
         document.getElementById("awayScore").textContent = awayScore;
-
       }
 
       if (team === "home") {
-
         homeScore += amount;
 
         if (homeScore < 0) {
@@ -237,59 +221,64 @@ let outs = 0;
         }
 
         document.getElementById("homeScore").textContent = homeScore;
-
       }
 
+    };
 
-    /*
-      CHANGE INNING
-    */
 
     window.changeInning = function(amount) {
 
-  // Make sure inning always starts as a real number
-  if (!Number.isFinite(Number(inning)) || Number(inning) < 1) {
-    inning = 1;
-    inning = 1;
-document.getElementById("inning").textContent = "1";
-  } else {
-    inning = Number(inning);
-  }
+      inning = Number(inning);
 
-  inning += amount;
+      if (!Number.isFinite(inning) || inning < 1) {
+        inning = 1;
+      }
 
-  if (inning < 1) {
-    inning = 1;
-  }
+      inning += amount;
 
-  document.getElementById("inning").textContent = inning;
-};
+      if (inning < 1) {
+        inning = 1;
+      }
+
+      document.getElementById("inning").textContent = inning;
+    };
 
 
+    window.changeOuts = function(amount) {
 
-}
- /*
-  CHANGE OUTS
-*/
+      outs += amount;
 
-window.changeOuts = function(amount) {
+      if (outs < 0) {
+        outs = 0;
+      }
 
-  outs += amount;
+      if (outs > 2) {
+        outs = 2;
+      }
 
-  if (outs < 0) {
-    outs = 0;
-  }
+      document.getElementById("outs").textContent = outs;
 
-  if (outs > 2) {
-    outs = 2;
-  }
+    };
 
-  document.getElementById("outs").textContent = outs;
-  
-};   
-    /*
-      SEND SCOREBOARD TO FIREBASE
-    */
+
+    window.setHalf = function(half) {
+
+      inningHalf = half;
+
+      document.getElementById("halfDisplay").textContent =
+        inningHalf;
+
+      document.getElementById("topButton").classList.remove("active");
+      document.getElementById("bottomButton").classList.remove("active");
+
+      if (inningHalf === "TOP") {
+        document.getElementById("topButton").classList.add("active");
+      } else {
+        document.getElementById("bottomButton").classList.add("active");
+      }
+
+    };
+
 
     window.updateScoreboard = async function() {
 
@@ -303,14 +292,14 @@ window.changeOuts = function(amount) {
       const scoreboardData = {
 
         awayTeam: awayTeam,
-
         homeTeam: homeTeam,
 
         awayScore: awayScore,
-
         homeScore: homeScore,
 
         inning: inning,
+        inningNumber: inning,
+        inningHalf: inningHalf,
 
         outs: outs,
 
@@ -338,10 +327,6 @@ window.changeOuts = function(amount) {
     };
 
 
-    /*
-      LISTEN FOR FIREBASE CHANGES
-    */
-
     onValue(scoreboardRef, (snapshot) => {
 
       const data = snapshot.val();
@@ -356,14 +341,11 @@ window.changeOuts = function(amount) {
       }
 
 
-      /*
-        Only load Firebase values when they exist.
-      */
-
       if (data.awayTeam !== undefined) {
         document.getElementById("awayTeam").value =
           data.awayTeam;
       }
+
 
       if (data.homeTeam !== undefined) {
         document.getElementById("homeTeam").value =
@@ -379,15 +361,7 @@ window.changeOuts = function(amount) {
           awayScore;
 
       }
-      
-if (data.outs !== undefined) {
 
-  outs = Number(data.outs);
-
-  document.getElementById("outs").textContent =
-    outs;
-
-}
 
       if (data.homeScore !== undefined) {
 
@@ -399,12 +373,45 @@ if (data.outs !== undefined) {
       }
 
 
-      if (data.inning !== undefined) {
+      if (data.outs !== undefined) {
+
+        outs = Number(data.outs);
+
+        document.getElementById("outs").textContent =
+          outs;
+
+      }
+
+
+      if (data.inningNumber !== undefined) {
+
+        inning = Number(data.inningNumber);
+
+      } else if (data.inning !== undefined) {
 
         inning = Number(data.inning);
 
-        document.getElementById("inning").textContent =
-          inning;
+      }
+
+      document.getElementById("inning").textContent =
+        inning;
+
+
+      if (data.inningHalf !== undefined) {
+
+        inningHalf = data.inningHalf;
+
+        document.getElementById("halfDisplay").textContent =
+          inningHalf;
+
+        document.getElementById("topButton").classList.remove("active");
+        document.getElementById("bottomButton").classList.remove("active");
+
+        if (inningHalf === "TOP") {
+          document.getElementById("topButton").classList.add("active");
+        } else {
+          document.getElementById("bottomButton").classList.add("active");
+        }
 
       }
 
@@ -414,8 +421,5 @@ if (data.outs !== undefined) {
 
     });
 
-
-  </script>
-
-</body>
+  </script></body>
 </html>
