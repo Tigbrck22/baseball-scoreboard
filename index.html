@@ -28,7 +28,6 @@ body {
   font-size: 32px;
 }
 
-/* Larger inning and outs */
 .info {
   text-align: center;
   border-top: 1px solid white;
@@ -37,7 +36,6 @@ body {
   font-size: 30px;
   font-weight: bold;
 }
-
 </style></head><body><div class="scoreboard">  <div class="team">
     <span id="awayTeam">MOUNTAIN VIEW PREP</span>
     <span class="score" id="awayScore">0</span>
@@ -89,8 +87,21 @@ onValue(scoreboardRef, (snapshot) => {
   document.getElementById("homeScore").textContent =
     data.homeScore ?? 0;
 
+  const inningHalf = data.inningHalf || "TOP";
+  const inningNumber = Number(data.inningNumber) || 1;
+
+  let suffix = "TH";
+
+  if (inningNumber === 1) {
+    suffix = "ST";
+  } else if (inningNumber === 2) {
+    suffix = "ND";
+  } else if (inningNumber === 3) {
+    suffix = "RD";
+  }
+
   document.getElementById("inning").textContent =
-    data.inning || "TOP 1ST";
+    inningHalf + " " + inningNumber + suffix;
 
   document.getElementById("outs").textContent =
     (data.outs ?? 0) + " OUT";
