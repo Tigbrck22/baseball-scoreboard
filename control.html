@@ -268,6 +268,25 @@ document.getElementById("inning").textContent = "1";
 };
 
 
+ /*
+  CHANGE OUTS
+*/
+
+window.changeOuts = function(amount) {
+
+  outs += amount;
+
+  if (outs < 0) {
+    outs = 0;
+  }
+
+  if (outs > 2) {
+    outs = 2;
+  }
+
+  document.getElementById("outs").textContent = outs;
+  
+};   
     /*
       SEND SCOREBOARD TO FIREBASE
     */
