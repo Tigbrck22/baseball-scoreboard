@@ -267,7 +267,14 @@ document.getElementById("inning").textContent = "1";
   document.getElementById("inning").textContent = inning;
 };
 
+if (data.outs !== undefined) {
 
+  outs = Number(data.outs);
+
+  document.getElementById("outs").textContent =
+    outs;
+
+}
  /*
   CHANGE OUTS
 */
@@ -311,6 +318,8 @@ window.changeOuts = function(amount) {
         homeScore: homeScore,
 
         inning: inning,
+
+        outs: outs,
 
         updatedAt: Date.now()
 
