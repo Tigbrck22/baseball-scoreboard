@@ -1,8 +1,10 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Baseball Scoreboard Control</title>  <style>
+  <title>Baseball Scoreboard Control</title>
+  <style>
     body {
       font-family: Arial, sans-serif;
       background: #111;
@@ -14,6 +16,18 @@
 
     h1 {
       margin-bottom: 10px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    #login-card {
+      margin: 20px auto;
+      max-width: 400px;
+      padding: 20px;
+      background: #222;
+      border-radius: 12px;
     }
 
     #status {
@@ -41,6 +55,7 @@
       border-radius: 6px;
       border: none;
       text-align: center;
+      box-sizing: border-box;
     }
 
     .score {
@@ -91,6 +106,14 @@
       margin-top: 20px;
     }
 
+    #logout-btn {
+      background: #dc3545;
+      color: white;
+      font-size: 16px;
+      padding: 10px 20px;
+      margin-top: 15px;
+    }
+
     .inning-controls {
       margin: 20px auto;
       max-width: 500px;
@@ -98,176 +121,155 @@
       background: #222;
       border-radius: 12px;
     }
-  </style></head><body>  <h1>Baseball Scoreboard Control</h1>  <div id="status">Connecting to Firebase...</div>  <div class="team">
-    <h2>Away Team</h2><input id="awayTeam" type="text" value="Mountain View Prep">
+  </style>
+</head>
+<body>
 
-<div id="awayScore" class="score">0</div>
+  <h1>Baseball Scoreboard Control</h1>
 
-<button class="add" onclick="changeScore('away', 1)">
-  Away +1
-</button>
+  <!-- LOGIN SECTION -->
+  <div id="login-card">
+    <h2>Admin Login</h2>
+    <input type="email" id="loginEmail" value="tigbrck22@gmail.com" placeholder="Email"><br>
+    <input type="password" id="loginPassword" placeholder="Password"><br>
+    <button class="add" id="loginBtn">Log In</button>
+    <div id="authError" style="color: #ff4d4d; margin-top: 10px;"></div>
+  </div>
 
-<button class="subtract" onclick="changeScore('away', -1)">
-  Away -1
-</button>
+  <!-- CONTROL PANEL SECTION (Hidden until logged in) -->
+  <div id="panel-content" class="hidden">
+    <div id="status">Connecting to Firebase...</div>
 
-  </div>  <div class="team">
-    <h2>Home Team</h2><input id="homeTeam" type="text" value="Opponent">
+    <div class="team">
+      <h2>Away Team</h2>
+      <input id="awayTeam" type="text" value="Mountain View Prep">
+      <div id="awayScore" class="score">0</div>
+      <button class="add" onclick="changeScore('away', 1)">Away +1</button>
+      <button class="subtract" onclick="changeScore('away', -1)">Away -1</button>
+    </div>
 
-<div id="homeScore" class="score">0</div>
+    <div class="team">
+      <h2>Home Team</h2>
+      <input id="homeTeam" type="text" value="Opponent">
+      <div id="homeScore" class="score">0</div>
+      <button class="add" onclick="changeScore('home', 1)">Home +1</button>
+      <button class="subtract" onclick="changeScore('home', -1)">Home -1</button>
+    </div>
 
-<button class="add" onclick="changeScore('home', 1)">
-  Home +1
-</button>
+    <div class="inning-controls">
+      <h2>Outs</h2>
+      <div id="outs" class="score">0</div>
+      <button class="add" onclick="changeOuts(1)">Out +1</button>
+      <button class="subtract" onclick="changeOuts(-1)">Out -1</button>
+    </div>
 
-<button class="subtract" onclick="changeScore('home', -1)">
-  Home -1
-</button>
+    <div class="inning-controls">
+      <h2>Inning</h2>
+      <div id="inning" class="score">1</div>
+      <button class="add" onclick="changeInning(1)">Inning +1</button>
+      <button class="subtract" onclick="changeInning(-1)">Inning -1</button>
 
-  </div>  <div class="inning-controls"><h2>Outs</h2>
+      <h2>Half</h2>
+      <button id="topButton" class="half active" onclick="setHalf('TOP')">TOP</button>
+      <button id="bottomButton" class="half" onclick="setHalf('BOTTOM')">BOTTOM</button>
+      <div id="halfDisplay" style="font-size:28px; margin-top:10px;">TOP</div>
+    </div>
 
-<div id="outs" class="score">0</div>
+    <button id="update" onclick="updateScoreboard()">UPDATE SCOREBOARD</button><br>
+    <button id="logout-btn">Log Out</button>
+  </div>
 
-<button class="add" onclick="changeOuts(1)">
-  Out +1
-</button>
-
-<button class="subtract" onclick="changeOuts(-1)">
-  Out -1
-</button>
-
-  </div>  <div class="inning-controls"><h2>Inning</h2>
-
-<div id="inning" class="score">1</div>
-
-<button class="add" onclick="changeInning(1)">
-  Inning +1
-</button>
-
-<button class="subtract" onclick="changeInning(-1)">
-  Inning -1
-</button>
-
-<h2>Half</h2>
-
-<button id="topButton" class="half active" onclick="setHalf('TOP')">
-  TOP
-</button>
-
-<button id="bottomButton" class="half" onclick="setHalf('BOTTOM')">
-  BOTTOM
-</button>
-
-<div id="halfDisplay" style="font-size:28px; margin-top:10px;">
-  TOP
-</div>
-
-  </div>  <button id="update" onclick="updateScoreboard()">
-    UPDATE SCOREBOARD
-  </button>  <script type="module">
-
-    import { initializeApp }
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-    import {
-      getDatabase,
-      ref,
-      set,
-      onValue
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey:"AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
-      authDomain:"baseball-scoreboard-fd6ad.firebaseapp.com",
-      databaseURL:"https://baseball-scoreboard-fd6ad-default-rtdb.firebaseio.com",
-      projectId:"baseball-scoreboard-fd6ad",
-      storageBucket:"baseball-scoreboard-fd6ad.firebasestorage.app",
-      messagingSenderId:"208584160937",
-      appId:"1:208584160937:web:ebd8a20fce17f2fed1dbb8",
-      measurementId:"G-FY4J06H31X"
+      apiKey: "AIzaSyAc6yzvHcP_Taod0Ctmjss6pKd2hKdRETE",
+      authDomain: "baseball-scoreboard-fd6ad.firebaseapp.com",
+      databaseURL: "https://baseball-scoreboard-fd6ad-default-rtdb.firebaseio.com",
+      projectId: "baseball-scoreboard-fd6ad",
+      storageBucket: "baseball-scoreboard-fd6ad.firebasestorage.app",
+      messagingSenderId: "208584160937",
+      appId: "1:208584160937:web:ebd8a20fce17f2fed1dbb8",
+      measurementId: "G-FY4J06H31X"
     };
 
-
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getDatabase(app);
     const scoreboardRef = ref(db, "scoreboard");
 
+    // AUTHENTICATION LOGIC
+    const loginCard = document.getElementById("login-card");
+    const panelContent = document.getElementById("panel-content");
+    const authError = document.getElementById("authError");
 
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loginCard.classList.add("hidden");
+        panelContent.classList.remove("hidden");
+        listenToScoreboard();
+      } else {
+        loginCard.classList.remove("hidden");
+        panelContent.classList.add("hidden");
+      }
+    });
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      
+      authError.textContent = "";
+
+      signInWithEmailAndPassword(auth, email, password)
+        .catch((error) => {
+          authError.textContent = "Login Failed: " + error.message;
+        });
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      signOut(auth);
+    });
+
+    // SCOREBOARD STATE
     let awayScore = 0;
     let homeScore = 0;
     let inning = 1;
     let outs = 0;
     let inningHalf = "TOP";
 
-
     window.changeScore = function(team, amount) {
-
       if (team === "away") {
         awayScore += amount;
-
-        if (awayScore < 0) {
-          awayScore = 0;
-        }
-
+        if (awayScore < 0) awayScore = 0;
         document.getElementById("awayScore").textContent = awayScore;
       }
-
       if (team === "home") {
         homeScore += amount;
-
-        if (homeScore < 0) {
-          homeScore = 0;
-        }
-
+        if (homeScore < 0) homeScore = 0;
         document.getElementById("homeScore").textContent = homeScore;
       }
-
     };
 
-
     window.changeInning = function(amount) {
-
       inning = Number(inning);
-
-      if (!Number.isFinite(inning) || inning < 1) {
-        inning = 1;
-      }
-
+      if (!Number.isFinite(inning) || inning < 1) inning = 1;
       inning += amount;
-
-      if (inning < 1) {
-        inning = 1;
-      }
-
+      if (inning < 1) inning = 1;
       document.getElementById("inning").textContent = inning;
     };
 
-
     window.changeOuts = function(amount) {
-
       outs += amount;
-
-      if (outs < 0) {
-        outs = 0;
-      }
-
-      if (outs > 2) {
-        outs = 2;
-      }
-
+      if (outs < 0) outs = 0;
+      if (outs > 2) outs = 2;
       document.getElementById("outs").textContent = outs;
-
     };
 
-
     window.setHalf = function(half) {
-
       inningHalf = half;
-
-      document.getElementById("halfDisplay").textContent =
-        inningHalf;
-
+      document.getElementById("halfDisplay").textContent = inningHalf;
       document.getElementById("topButton").classList.remove("active");
       document.getElementById("bottomButton").classList.remove("active");
 
@@ -276,150 +278,87 @@
       } else {
         document.getElementById("bottomButton").classList.add("active");
       }
-
     };
 
-
     window.updateScoreboard = async function() {
+      if (!auth.currentUser) {
+        document.getElementById("status").textContent = "ERROR: You must be logged in!";
+        return;
+      }
 
-      const awayTeam =
-        document.getElementById("awayTeam").value;
-
-      const homeTeam =
-        document.getElementById("homeTeam").value;
-
+      const awayTeam = document.getElementById("awayTeam").value;
+      const homeTeam = document.getElementById("homeTeam").value;
 
       const scoreboardData = {
-
         awayTeam: awayTeam,
         homeTeam: homeTeam,
-
         awayScore: awayScore,
         homeScore: homeScore,
-
         inning: inning,
         inningNumber: inning,
         inningHalf: inningHalf,
-
         outs: outs,
-
         updatedAt: Date.now()
-
       };
 
-
       try {
-
         await set(scoreboardRef, scoreboardData);
-
-        document.getElementById("status").textContent =
-          "Scoreboard updated successfully!";
-
+        document.getElementById("status").textContent = "Scoreboard updated successfully!";
       } catch (error) {
-
         console.error(error);
-
-        document.getElementById("status").textContent =
-          "ERROR: " + error.message;
-
+        document.getElementById("status").textContent = "ERROR: " + error.message;
       }
-
     };
 
-
-    onValue(scoreboardRef, (snapshot) => {
-
-      const data = snapshot.val();
-
-      if (!data) {
-
-        document.getElementById("status").textContent =
-          "Firebase connected. No scoreboard data yet.";
-
-        return;
-
-      }
-
-
-      if (data.awayTeam !== undefined) {
-        document.getElementById("awayTeam").value =
-          data.awayTeam;
-      }
-
-
-      if (data.homeTeam !== undefined) {
-        document.getElementById("homeTeam").value =
-          data.homeTeam;
-      }
-
-
-      if (data.awayScore !== undefined) {
-
-        awayScore = Number(data.awayScore);
-
-        document.getElementById("awayScore").textContent =
-          awayScore;
-
-      }
-
-
-      if (data.homeScore !== undefined) {
-
-        homeScore = Number(data.homeScore);
-
-        document.getElementById("homeScore").textContent =
-          homeScore;
-
-      }
-
-
-      if (data.outs !== undefined) {
-
-        outs = Number(data.outs);
-
-        document.getElementById("outs").textContent =
-          outs;
-
-      }
-
-
-      if (data.inningNumber !== undefined) {
-
-        inning = Number(data.inningNumber);
-
-      } else if (data.inning !== undefined) {
-
-        inning = Number(data.inning);
-
-      }
-
-      document.getElementById("inning").textContent =
-        inning;
-
-
-      if (data.inningHalf !== undefined) {
-
-        inningHalf = data.inningHalf;
-
-        document.getElementById("halfDisplay").textContent =
-          inningHalf;
-
-        document.getElementById("topButton").classList.remove("active");
-        document.getElementById("bottomButton").classList.remove("active");
-
-        if (inningHalf === "TOP") {
-          document.getElementById("topButton").classList.add("active");
-        } else {
-          document.getElementById("bottomButton").classList.add("active");
+    function listenToScoreboard() {
+      onValue(scoreboardRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          document.getElementById("status").textContent = "Firebase connected. No scoreboard data yet.";
+          return;
         }
 
-      }
+        if (data.awayTeam !== undefined) document.getElementById("awayTeam").value = data.awayTeam;
+        if (data.homeTeam !== undefined) document.getElementById("homeTeam").value = data.homeTeam;
 
+        if (data.awayScore !== undefined) {
+          awayScore = Number(data.awayScore);
+          document.getElementById("awayScore").textContent = awayScore;
+        }
 
-      document.getElementById("status").textContent =
-        "Firebase connected. Ready to update.";
+        if (data.homeScore !== undefined) {
+          homeScore = Number(data.homeScore);
+          document.getElementById("homeScore").textContent = homeScore;
+        }
 
-    });
+        if (data.outs !== undefined) {
+          outs = Number(data.outs);
+          document.getElementById("outs").textContent = outs;
+        }
 
-  </script></body>
+        if (data.inningNumber !== undefined) {
+          inning = Number(data.inningNumber);
+        } else if (data.inning !== undefined) {
+          inning = Number(data.inning);
+        }
+        document.getElementById("inning").textContent = inning;
+
+        if (data.inningHalf !== undefined) {
+          inningHalf = data.inningHalf;
+          document.getElementById("halfDisplay").textContent = inningHalf;
+          document.getElementById("topButton").classList.remove("active");
+          document.getElementById("bottomButton").classList.remove("active");
+
+          if (inningHalf === "TOP") {
+            document.getElementById("topButton").classList.add("active");
+          } else {
+            document.getElementById("bottomButton").classList.add("active");
+          }
+        }
+
+        document.getElementById("status").textContent = "Firebase connected. Ready to update.";
+      });
+    }
+  </script>
+</body>
 </html>
