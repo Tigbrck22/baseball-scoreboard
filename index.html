@@ -1,7 +1,15 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Baseball Scoreboard</title><style>
+<title>Baseball Scoreboard</title>
+
+<style>
+:root {
+  --board-opacity: 0.45;
+}
+
 body {
   margin: 0;
   background: transparent;
@@ -10,21 +18,30 @@ body {
 }
 
 .scoreboard {
-  background: rgba(0,0,0,0.88);
+  background: rgba(0, 0, 0, var(--board-opacity));
   padding: 12px;
   width: 450px;
+  max-width: 100vw;
+  box-sizing: border-box;
   border-radius: 10px;
 }
 
 .team {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 10px;
   font-size: 25px;
   font-weight: bold;
   padding: 5px;
 }
 
+.team span:first-child {
+  overflow-wrap: anywhere;
+}
+
 .score {
+  flex-shrink: 0;
   font-size: 32px;
 }
 
@@ -36,18 +53,77 @@ body {
   font-size: 30px;
   font-weight: bold;
 }
-</style></head><body><div class="scoreboard">  <div class="team">
+
+/* Transparency controls */
+.controls {
+  width: 450px;
+  max-width: 100vw;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+}
+
+.controls label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.controls input {
+  width: 100%;
+}
+
+.controls button {
+  margin-top: 8px;
+  padding: 7px 12px;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="scoreboard">
+  <div class="team">
     <span id="awayTeam">MOUNTAIN VIEW PREP</span>
     <span class="score" id="awayScore">0</span>
-  </div>  <div class="team">
+  </div>
+
+  <div class="team">
     <span id="homeTeam">OPPONENT</span>
     <span class="score" id="homeScore">0</span>
-  </div>  <div class="info">
-    <span id="inning">TOP 1ST</span>
-    •
-    <span id="outs">0 OUT</span>
-  </div></div><script type="module">
+  </div>
 
+  <div class="info">
+    <span id="inning">TOP 1ST</span>
+    &nbsp;•&nbsp;
+    <span id="outs">0 OUT</span>
+  </div>
+</div>
+
+<div class="controls" id="controls">
+  <label for="transparency">
+    Background opacity: <strong id="opacityValue">45%</strong>
+  </label>
+
+  <input
+    type="range"
+    id="transparency"
+    min="0"
+    max="100"
+    value="45"
+    step="5"
+  >
+
+  <button id="hideControls" type="button">
+    Hide Controls
+  </button>
+</div>
+
+<script type="module">
 import { initializeApp } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
@@ -66,13 +142,43 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
 const scoreboardRef = ref(db, "scoreboard");
 
+const slider = document.getElementById("transparency");
+const opacityValue = document.getElementById("opacityValue");
+const controls = document.getElementById("controls");
+
+function setOpacity(value) {
+  const opacity = Math.max(0, Math.min(100, Number(value)));
+  document.documentElement.style.setProperty(
+    "--board-opacity", String(opacity / 100)
+  );
+  opacityValue.textContent = opacity + "%";
+
+  try {
+    localStorage.setItem("baseballOpacity", String(opacity));
+  } catch (_) {}
+}
+
+try {
+  const saved = localStorage.getItem("baseballOpacity");
+  if (saved !== null && Number.isFinite(Number(saved))) {
+    slider.value = Math.max(0, Math.min(100, Number(saved)));
+  }
+} catch (_) {}
+
+setOpacity(slider.value);
+
+slider.addEventListener("input", () => {
+  setOpacity(slider.value);
+});
+
+document.getElementById("hideControls").addEventListener("click", () => {
+  controls.style.display = "none";
+});
+
 onValue(scoreboardRef, (snapshot) => {
-
   const data = snapshot.val();
-
   if (!data) return;
 
   document.getElementById("awayTeam").textContent =
@@ -87,26 +193,23 @@ onValue(scoreboardRef, (snapshot) => {
   document.getElementById("homeScore").textContent =
     data.homeScore ?? 0;
 
-  const inningHalf = data.inningHalf || "TOP";
-  const inningNumber = Number(data.inningNumber) || 1;
+  const half = data.inningHalf || "TOP";
+  const number = Math.max(
+    1, Number(data.inningNumber ?? data.inning) || 1
+  );
 
-  let suffix = "TH";
-
-  if (inningNumber === 1) {
-    suffix = "ST";
-  } else if (inningNumber === 2) {
-    suffix = "ND";
-  } else if (inningNumber === 3) {
-    suffix = "RD";
-  }
+  const suffix = number % 100 >= 11 && number % 100 <= 13
+    ? "TH"
+    : ({1:"ST", 2:"ND", 3:"RD"}[number % 10] || "TH");
 
   document.getElementById("inning").textContent =
-    inningHalf + " " + inningNumber + suffix;
+    half + " " + number + suffix;
 
+  const outs = Number(data.outs) || 0;
   document.getElementById("outs").textContent =
-    (data.outs ?? 0) + " OUT";
-
+    outs + (outs === 1 ? " OUT" : " OUTS");
 });
+</script>
 
-</script></body>
+</body>
 </html>
