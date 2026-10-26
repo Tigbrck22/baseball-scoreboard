@@ -95,7 +95,6 @@ body {
   font-size: 14px;
 }
 
-/* Overlay-only URL hides the controls */
 body.overlay-mode #controls {
   display: none;
 }
@@ -174,7 +173,6 @@ const slider = document.getElementById("transparency");
 const opacityValue = document.getElementById("opacityValue");
 const controls = document.getElementById("controls");
 
-// Use ?overlay=1 in IRL Pro to hide all controls.
 const overlayMode =
   new URLSearchParams(window.location.search).get("overlay") === "1";
 
@@ -183,8 +181,9 @@ if (overlayMode) {
 }
 
 let currentOpacity = 28;
-let opacityReceived = false;
 let saveTimer = null;
+let isSaving = false;
+let pendingRemoteOpacity = null;
 
 function applyOpacity(value) {
   const opacity = Math.max(
@@ -203,17 +202,29 @@ function applyOpacity(value) {
   opacityValue.textContent = opacity + "%";
 }
 
-// Save slider changes to Firebase.
-// A short delay avoids sending a database write for every slider movement.
 function setOpacity(value) {
   applyOpacity(value);
 
   clearTimeout(saveTimer);
+  isSaving = true;
 
-  saveTimer = setTimeout(() => {
-    set(opacityRef, currentOpacity).catch(error => {
+  saveTimer = setTimeout(async () => {
+    try {
+      await set(opacityRef, currentOpacity);
+      pendingRemoteOpacity = null;
+    } catch (error) {
       console.error("Could not save opacity to Firebase:", error);
-    });
+      opacityValue.textContent = currentOpacity + "% (save failed)";
+    } finally {
+      isSaving = false;
+      saveTimer = null;
+
+      if (pendingRemoteOpacity !== null) {
+        const remoteValue = pendingRemoteOpacity;
+        pendingRemoteOpacity = null;
+        applyOpacity(remoteValue);
+      }
+    }
   }, 200);
 }
 
@@ -221,38 +232,40 @@ slider.addEventListener("input", () => {
   setOpacity(slider.value);
 });
 
-// Load and listen for opacity changes on both pages.
 onValue(opacityRef, snapshot => {
-  opacityReceived = true;
-
   const savedOpacity = snapshot.val();
 
   if (savedOpacity === null) {
-    applyOpacity(28);
+    if (!isSaving) {
+      applyOpacity(28);
 
-    // Initialize the shared setting if it does not exist.
-    set(opacityRef, 28).catch(error => {
-      console.error("Could not initialize opacity:", error);
-    });
-
+      set(opacityRef, 28).catch(error => {
+        console.error("Could not initialize opacity:", error);
+      });
+    }
     return;
   }
 
-  // Do not overwrite a slider movement currently being saved.
-  if (saveTimer !== null) return;
+  const remoteOpacity = Math.max(
+    0,
+    Math.min(100, Number(savedOpacity))
+  );
 
-  applyOpacity(savedOpacity);
+  if (isSaving || saveTimer !== null) {
+    pendingRemoteOpacity = remoteOpacity;
+    return;
+  }
+
+  applyOpacity(remoteOpacity);
 }, error => {
   console.error("Could not read opacity from Firebase:", error);
+  opacityValue.textContent = "Firebase read failed";
 });
 
-// Hide Controls only affects this browser page.
-// For IRL Pro, use the ?overlay=1 URL instead.
 document.getElementById("hideControls").addEventListener("click", () => {
   controls.style.display = "none";
 });
 
-// Listen for scoreboard changes.
 onValue(scoreboardRef, snapshot => {
   const data = snapshot.val();
   if (!data) return;
