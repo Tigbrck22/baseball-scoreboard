@@ -25,10 +25,10 @@ body {
   box-sizing: border-box;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255,255,255,0.16);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.85);
 }
 
 .team {
@@ -39,11 +39,11 @@ body {
   font-size: 25px;
   font-weight: bold;
   padding: 10px 8px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255,255,255,0.035);
 }
 
 .team + .team {
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 1px solid rgba(255,255,255,0.16);
 }
 
 .team span:first-child {
@@ -59,12 +59,12 @@ body {
 
 .info {
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1px solid rgba(255,255,255,0.22);
   margin-top: 5px;
   padding: 10px 4px 5px;
   font-size: 30px;
   font-weight: bold;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(255,255,255,0.025);
 }
 
 .controls {
@@ -72,27 +72,44 @@ body {
   max-width: 100vw;
   box-sizing: border-box;
   margin-top: 8px;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.85);
+  padding: 12px;
+  background: rgba(0,0,0,0.9);
   border-radius: 8px;
   color: white;
-  font-size: 14px;
+  font-size: 15px;
   text-shadow: none;
 }
 
 .controls label {
   display: block;
-  margin-bottom: 8px;
+  margin: 12px 0 8px;
 }
 
-.controls input {
+.controls input[type="range"],
+.controls input[type="email"],
+.controls input[type="password"] {
   width: 100%;
+  box-sizing: border-box;
+}
+
+.controls input[type="email"],
+.controls input[type="password"] {
+  padding: 10px;
+  margin: 5px 0;
 }
 
 .controls button {
-  margin-top: 8px;
-  padding: 7px 12px;
-  font-size: 14px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  font-size: 15px;
+}
+
+#loginButton, #saveStatus {
+  margin-top: 10px;
+}
+
+#saveStatus {
+  overflow-wrap: anywhere;
 }
 
 body.overlay-mode #controls {
@@ -122,28 +139,64 @@ body.overlay-mode #controls {
 </div>
 
 <div class="controls" id="controls">
-  <label for="transparency">
-    Background opacity:
-    <strong id="opacityValue">28%</strong>
-  </label>
+  <h3>Scoreboard Background Opacity</h3>
 
-  <input
-    type="range"
-    id="transparency"
-    min="0"
-    max="100"
-    value="28"
-    step="5"
-  >
+  <div id="loginArea">
+    <p>Log in to change and save the opacity.</p>
 
-  <button id="hideControls" type="button">
-    Hide Controls
-  </button>
+    <label for="loginEmail">Firebase account email</label>
+    <input
+      type="email"
+      id="loginEmail"
+      value="tigbrck22@gmail.com"
+      autocomplete="username"
+      placeholder="Email"
+    >
+
+    <label for="loginPassword">Password</label>
+    <input
+      type="password"
+      id="loginPassword"
+      autocomplete="current-password"
+      placeholder="Enter your password"
+    >
+
+    <button id="loginButton" type="button">Log In</button>
+    <div id="loginStatus"></div>
+  </div>
+
+  <div id="opacityArea" hidden>
+    <label for="transparency">
+      Background opacity:
+      <strong id="opacityValue">28%</strong>
+    </label>
+
+    <input
+      type="range"
+      id="transparency"
+      min="0"
+      max="100"
+      value="28"
+      step="1"
+    >
+
+    <div id="saveStatus">Loading saved opacity...</div>
+
+    <button id="logoutButton" type="button">Log Out</button>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
   getDatabase,
@@ -164,6 +217,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getDatabase(app);
 
 const scoreboardRef = ref(db, "scoreboard");
@@ -171,10 +225,13 @@ const opacityRef = ref(db, "overlaySettings/opacity");
 
 const slider = document.getElementById("transparency");
 const opacityValue = document.getElementById("opacityValue");
-const controls = document.getElementById("controls");
+const loginArea = document.getElementById("loginArea");
+const opacityArea = document.getElementById("opacityArea");
+const loginStatus = document.getElementById("loginStatus");
+const saveStatus = document.getElementById("saveStatus");
 
 const overlayMode =
-  new URLSearchParams(window.location.search).get("overlay") === "1";
+  new URLSearchParams(location.search).get("overlay") === "1";
 
 if (overlayMode) {
   document.body.classList.add("overlay-mode");
@@ -182,14 +239,13 @@ if (overlayMode) {
 
 let currentOpacity = 28;
 let saveTimer = null;
-let isSaving = false;
+let opacityListenerStarted = false;
+let opacityWriteInProgress = false;
 let pendingRemoteOpacity = null;
+let sliderChangedDuringSave = false;
 
 function applyOpacity(value) {
-  const opacity = Math.max(
-    0,
-    Math.min(100, Number(value))
-  );
+  const opacity = Math.max(0, Math.min(100, Number(value)));
 
   currentOpacity = opacity;
 
@@ -202,70 +258,117 @@ function applyOpacity(value) {
   opacityValue.textContent = opacity + "%";
 }
 
-function setOpacity(value) {
-  applyOpacity(value);
+function startOpacityListener() {
+  if (opacityListenerStarted) return;
+  opacityListenerStarted = true;
+
+  onValue(opacityRef, snapshot => {
+    const saved = snapshot.val();
+
+    if (saved === null) {
+      applyOpacity(28);
+      saveStatus.textContent =
+        "No saved opacity yet. Move the slider to save it.";
+      return;
+    }
+
+    const remoteValue = Math.max(
+      0,
+      Math.min(100, Number(saved))
+    );
+
+    if (opacityWriteInProgress || saveTimer !== null) {
+      pendingRemoteOpacity = remoteValue;
+      return;
+    }
+
+    applyOpacity(remoteValue);
+    saveStatus.textContent = "Saved opacity: " + remoteValue + "%";
+  }, error => {
+    console.error("Opacity read failed:", error);
+    saveStatus.textContent = "Could not read opacity: " + error.message;
+  });
+}
+
+function queueOpacitySave() {
+  applyOpacity(slider.value);
+  sliderChangedDuringSave = true;
 
   clearTimeout(saveTimer);
-  isSaving = true;
+  saveStatus.textContent = "Saving...";
 
   saveTimer = setTimeout(async () => {
+    saveTimer = null;
+
+    if (!auth.currentUser) {
+      saveStatus.textContent = "Please log in before saving.";
+      return;
+    }
+
+    const valueToSave = currentOpacity;
+    opacityWriteInProgress = true;
+    sliderChangedDuringSave = false;
+
     try {
-      await set(opacityRef, currentOpacity);
-      pendingRemoteOpacity = null;
+      await set(opacityRef, valueToSave);
+      saveStatus.textContent = "Opacity saved: " + valueToSave + "%";
     } catch (error) {
-      console.error("Could not save opacity to Firebase:", error);
-      opacityValue.textContent = currentOpacity + "% (save failed)";
+      console.error("Opacity write failed:", error);
+      saveStatus.textContent = "Save failed: " + error.message;
     } finally {
-      isSaving = false;
-      saveTimer = null;
+      opacityWriteInProgress = false;
 
       if (pendingRemoteOpacity !== null) {
         const remoteValue = pendingRemoteOpacity;
         pendingRemoteOpacity = null;
-        applyOpacity(remoteValue);
+
+        if (!sliderChangedDuringSave && saveTimer === null) {
+          applyOpacity(remoteValue);
+        }
       }
     }
-  }, 200);
+  }, 300);
 }
 
-slider.addEventListener("input", () => {
-  setOpacity(slider.value);
-});
+slider.addEventListener("input", queueOpacitySave);
 
-onValue(opacityRef, snapshot => {
-  const savedOpacity = snapshot.val();
+document.getElementById("loginButton").addEventListener("click", async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
 
-  if (savedOpacity === null) {
-    if (!isSaving) {
-      applyOpacity(28);
+  loginStatus.textContent = "Logging in...";
 
-      set(opacityRef, 28).catch(error => {
-        console.error("Could not initialize opacity:", error);
-      });
-    }
-    return;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    document.getElementById("loginPassword").value = "";
+    loginStatus.textContent = "";
+  } catch (error) {
+    console.error("Login failed:", error);
+    loginStatus.textContent = "Login failed: " + error.message;
   }
+});
 
-  const remoteOpacity = Math.max(
-    0,
-    Math.min(100, Number(savedOpacity))
-  );
-
-  if (isSaving || saveTimer !== null) {
-    pendingRemoteOpacity = remoteOpacity;
-    return;
+document.getElementById("logoutButton").addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    saveStatus.textContent = "Logout failed: " + error.message;
   }
-
-  applyOpacity(remoteOpacity);
-}, error => {
-  console.error("Could not read opacity from Firebase:", error);
-  opacityValue.textContent = "Firebase read failed";
 });
 
-document.getElementById("hideControls").addEventListener("click", () => {
-  controls.style.display = "none";
+onAuthStateChanged(auth, user => {
+  if (user) {
+    loginArea.hidden = true;
+    opacityArea.hidden = false;
+    startOpacityListener();
+  } else {
+    loginArea.hidden = false;
+    opacityArea.hidden = true;
+    loginStatus.textContent = "Please log in to edit opacity.";
+  }
 });
 
+// Publicly readable scoreboard data for the IRL Pro overlay.
 onValue(scoreboardRef, snapshot => {
   const data = snapshot.val();
   if (!data) return;
@@ -283,7 +386,6 @@ onValue(scoreboardRef, snapshot => {
     data.homeScore ?? 0;
 
   const half = data.inningHalf || "TOP";
-
   const number = Math.max(
     1,
     Number(data.inningNumber ?? data.inning) || 1
@@ -298,7 +400,6 @@ onValue(scoreboardRef, snapshot => {
     half + " " + number + suffix;
 
   const outs = Number(data.outs) || 0;
-
   document.getElementById("outs").textContent =
     outs + (outs === 1 ? " OUT" : " OUTS");
 });
