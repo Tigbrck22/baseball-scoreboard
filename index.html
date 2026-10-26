@@ -25,12 +25,9 @@ body {
   box-sizing: border-box;
   border-radius: 12px;
   overflow: hidden;
-
   border: 1px solid rgba(255, 255, 255, 0.16);
-
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 
@@ -42,8 +39,6 @@ body {
   font-size: 25px;
   font-weight: bold;
   padding: 10px 8px;
-
-  /* Transparent individual team rows */
   background: rgba(255, 255, 255, 0.035);
 }
 
@@ -72,7 +67,6 @@ body {
   background: rgba(255, 255, 255, 0.025);
 }
 
-/* Opacity controls remain available */
 .controls {
   width: 450px;
   max-width: 100vw;
@@ -99,6 +93,11 @@ body {
   margin-top: 8px;
   padding: 7px 12px;
   font-size: 14px;
+}
+
+/* Overlay-only URL hides the controls */
+body.overlay-mode #controls {
+  display: none;
 }
 </style>
 </head>
@@ -147,7 +146,12 @@ body {
 import { initializeApp } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import { getDatabase, ref, onValue } from
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set
+} from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
@@ -162,49 +166,94 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
 const scoreboardRef = ref(db, "scoreboard");
+const opacityRef = ref(db, "overlaySettings/opacity");
 
 const slider = document.getElementById("transparency");
 const opacityValue = document.getElementById("opacityValue");
 const controls = document.getElementById("controls");
 
-function setOpacity(value) {
-  const opacity = Math.max(0, Math.min(100, Number(value)));
+// Use ?overlay=1 in IRL Pro to hide all controls.
+const overlayMode =
+  new URLSearchParams(window.location.search).get("overlay") === "1";
+
+if (overlayMode) {
+  document.body.classList.add("overlay-mode");
+}
+
+let currentOpacity = 28;
+let opacityReceived = false;
+let saveTimer = null;
+
+function applyOpacity(value) {
+  const opacity = Math.max(
+    0,
+    Math.min(100, Number(value))
+  );
+
+  currentOpacity = opacity;
 
   document.documentElement.style.setProperty(
     "--board-opacity",
     String(opacity / 100)
   );
 
+  slider.value = String(opacity);
   opacityValue.textContent = opacity + "%";
-
-  try {
-    localStorage.setItem("baseballOpacity", String(opacity));
-  } catch (_) {}
 }
 
-try {
-  const saved = localStorage.getItem("baseballOpacity");
+// Save slider changes to Firebase.
+// A short delay avoids sending a database write for every slider movement.
+function setOpacity(value) {
+  applyOpacity(value);
 
-  if (saved !== null && Number.isFinite(Number(saved))) {
-    slider.value = Math.max(
-      0,
-      Math.min(100, Number(saved))
-    );
-  }
-} catch (_) {}
+  clearTimeout(saveTimer);
 
-setOpacity(slider.value);
+  saveTimer = setTimeout(() => {
+    set(opacityRef, currentOpacity).catch(error => {
+      console.error("Could not save opacity to Firebase:", error);
+    });
+  }, 200);
+}
 
 slider.addEventListener("input", () => {
   setOpacity(slider.value);
 });
 
+// Load and listen for opacity changes on both pages.
+onValue(opacityRef, snapshot => {
+  opacityReceived = true;
+
+  const savedOpacity = snapshot.val();
+
+  if (savedOpacity === null) {
+    applyOpacity(28);
+
+    // Initialize the shared setting if it does not exist.
+    set(opacityRef, 28).catch(error => {
+      console.error("Could not initialize opacity:", error);
+    });
+
+    return;
+  }
+
+  // Do not overwrite a slider movement currently being saved.
+  if (saveTimer !== null) return;
+
+  applyOpacity(savedOpacity);
+}, error => {
+  console.error("Could not read opacity from Firebase:", error);
+});
+
+// Hide Controls only affects this browser page.
+// For IRL Pro, use the ?overlay=1 URL instead.
 document.getElementById("hideControls").addEventListener("click", () => {
   controls.style.display = "none";
 });
 
-onValue(scoreboardRef, (snapshot) => {
+// Listen for scoreboard changes.
+onValue(scoreboardRef, snapshot => {
   const data = snapshot.val();
   if (!data) return;
 
@@ -221,8 +270,10 @@ onValue(scoreboardRef, (snapshot) => {
     data.homeScore ?? 0;
 
   const half = data.inningHalf || "TOP";
+
   const number = Math.max(
-    1, Number(data.inningNumber ?? data.inning) || 1
+    1,
+    Number(data.inningNumber ?? data.inning) || 1
   );
 
   const suffix =
