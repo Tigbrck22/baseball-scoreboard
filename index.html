@@ -360,13 +360,15 @@ onAuthStateChanged(auth, user => {
   if (user) {
     loginArea.hidden = true;
     opacityArea.hidden = false;
-    startOpacityListener();
   } else {
     loginArea.hidden = false;
     opacityArea.hidden = true;
     loginStatus.textContent = "Please log in to edit opacity.";
   }
 });
+
+// Listen for saved opacity on both pages, including the IRL Pro overlay.
+startOpacityListener();
 
 // Publicly readable scoreboard data for the IRL Pro overlay.
 onValue(scoreboardRef, snapshot => {
